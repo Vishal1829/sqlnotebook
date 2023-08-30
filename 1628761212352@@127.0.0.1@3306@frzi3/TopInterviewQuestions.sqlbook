@@ -1,0 +1,234 @@
+-- SQLBook: Code
+SELECT * FROM Employee;
+SELECT * FROM EmployeeDetail;
+-- SQLBook: Code
+-- Write a query to retrieve the list of employees from the same city.
+SELECT e1.`EmpID`,e1.`EmpName`,e1.`City`
+FROM Employee e1, Employee e2
+WHERE e1.`EmpID`!=e2.`EmpID` AND e1.`City`=e2.`City`
+ORDER BY 1; -- OPTIONAL
+
+SELECT *
+FROM employee e1 JOIN employee e2 ON e1.`EmpID`<e2.`EmpID`
+AND e1.`City`=e2.`City`;
+-- SQLBook: Code
+-- Query to find the cumulative sum of employee's salary.
+SELECT *, SUM(`Salary`) OVER(ORDER BY `EmpID`) AS CumulativeSum
+FROM Employee;
+-- SQLBook: Code
+-- What's the male and female employees ratio.
+SELECT COUNT(IF(Gender='M',1,NULL)) * 100 / COUNT(*) AS Male, 
+COUNT(IF(Gender='F',1,NULL)) * 100 / COUNT(*) AS Female
+FROM employee;
+
+-- SELECT COUNT(IF(Gender='M',1,NULL)) FROM employee;
+-- SQLBook: Code
+-- Write a query to fetch 50% record from the Employee table.
+SELECT `EmpID`,`EmpName`,`Salary`,`City`,`Gender` FROM
+  (SELECT *, ROW_NUMBER() OVER(ORDER BY `EmpID`) AS rn
+  FROM employee) AS EmpTbl
+WHERE rn <= (SELECT COUNT(*)/2 FROM employee);
+-- SQLBook: Code
+-- Query to fetch the employee's salary but replace the LAST 2 digits with 'XX'.
+SELECT CONCAT(SUBSTRING(Salary,1,CHAR_LENGTH(Salary)-2),'XX') AS NewSal
+FROM Employee;
+
+SELECT CONCAT(SUBSTR(Salary,1,LENGTH(Salary)-2),'XX') AS NewSal
+FROM Employee;
+-- SQLBook: Code
+-- Write a query to fetch even and odd rows from Employee table.
+SELECT * FROM
+  (SELECT *, ROW_NUMBER() OVER(ORDER BY EmpID) AS rn
+   FROM employee ) AS Tbl
+WHERE MOD(rn,2)=0
+UNION
+SELECT * FROM
+  (SELECT *, ROW_NUMBER() OVER(ORDER BY EmpID) AS rn
+   FROM employee ) AS Tbl
+WHERE MOD(rn,2)=1;
+-- SQLBook: Code
+-- Write a query to find the list of Employee names which is:
+-- • starting with vowels (a, e, i, o, or u), without duplicates
+-- • ending with vowels (a, e, i, o, or u), without duplicates
+-- • starting & ending with vowels (a, e, i, o, or u), without duplicates
+SELECT DISTINCT `EmpName` FROM employee
+WHERE LOWER(`EmpName`) REGEXP '^[aeiou]';
+
+SELECT DISTINCT `EmpName` FROM employee
+WHERE `EmpName` REGEXP '^[AEIOUaeiou]';
+
+SELECT DISTINCT `EmpName` FROM employee
+WHERE `EmpName` REGEXP '[AEIOUaeiou]$';
+
+SELECT DISTINCT `EmpName` FROM employee
+WHERE `EmpName` REGEXP '^[AEIOUaeiou].*[AEIOUaeiou]$';
+
+SELECT DISTINCT `EmpName` FROM employee
+WHERE `EmpName` REGEXP '^(a|e|i|o|u).*(a|e|i|o|u)$';
+
+-- Explanation:
+-- When you put ^ character, then you indicate that you are verifying the string for the start. The parentheses are group separators.
+-- So, when putting (a|b|c) you are telling that the first group to be tested will match with a, b, or c. In the example, it marks as group (a|e|i|o|u). That means the string must start with any of those characters.
+-- The | character acts as a boolean OR comparator.
+-- The . indicates that any character except new line will be evaluated.
+-- The * indicates that we are expecting 0 or more characters that match.
+-- The $ character indicates the end of the string or the end of the line if we decide to go with multiline flag (/m).
+-- https://stackoverflow.com/questions/35814097/regex-to-match-beginning-and-end-of-a-word-with-a-vowel
+-- SQLBook: Code
+-- Find Nth highest salary from employee table with and without using the TOP/LIMIT keywords.
+-- Both are calculating the 3rd highest salary without using TOP/LIMIT.
+SELECT `EmpID`,`EmpName`,`Salary` FROM Employee e1
+WHERE 2 = (SELECT COUNT(DISTINCT `Salary`) FROM Employee e2
+           WHERE e2.`Salary`>e1.`Salary`);
+
+SELECT `EmpID`,`EmpName`,`Salary` FROM Employee e1
+WHERE 3 = (SELECT COUNT(DISTINCT `Salary`) FROM Employee e2
+           WHERE e2.`Salary`>=e1.`Salary`);
+
+SELECT DISTINCT `Salary` FROM employee
+ORDER BY `Salary` DESC
+LIMIT 2,1;  -- first is N-1(as indexing is from 0),no of records to show.
+
+WITH CTE AS
+(
+  SELECT *,DENSE_RANK() OVER(ORDER BY `Salary` DESC) AS rnk
+  FROM Employee
+)
+SELECT `EmpID`,`EmpName`,`Salary`
+FROM CTE
+WHERE rnk=3;
+-- SQLBook: Code
+-- Creating a stored PROCEDURE to calculate Nth Highest Salary.
+SELECT * FROM employee;
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS getNthHigheshtSalary;
+
+CREATE PROCEDURE getNthHigheshtSalary(N INT)
+BEGIN
+    WITH CTE AS
+    (
+      SELECT *,DENSE_RANK() OVER(ORDER BY `Salary` DESC) AS rnk
+      FROM Employee
+    )
+    SELECT `EmpID`,`EmpName`,`Salary`
+    FROM CTE
+    WHERE rnk=N;
+END $$
+
+DELIMITER ;
+
+CALL getNthHigheshtSalary(3);
+
+-- Note:- IN is the default mode.
+-- An IN parameter passes a value into a procedure. The procedure might modify the value, but the modification is not visible to the caller when the procedure returns.
+-- An OUT parameter passes a value from the procedure back to the caller. Its initial value is NULL within the procedure, and its value is visible to the caller when the procedure returns.
+-- An INOUT parameter is initialized by the caller, can be modified by the procedure, and any change made by the procedure is visible to the caller when the procedure returns.
+
+-- https://riptutorial.com/mysql/example/11212/stored-procedure-with-in--out--inout-parameters
+-- SQLBook: Code
+-- Write a query to find and remove duplicate records from a table.
+SELECT `EmpID`,`EmpName`,`Gender`,`Salary`,`City`,
+COUNT(*) AS duplicate_count
+FROM employee
+GROUP BY `EmpID`,`EmpName`,`Gender`,`Salary`,`City`
+HAVING duplicate_count > 1;
+
+DELETE FROM employee
+WHERE `EmpID` IN
+(SELECT `EmpID` FROM employee
+ GROUP BY `EmpID` HAVING COUNT(*) > 1);
+-- SQLBook: Code
+-- Query to retrieve the list of employees working in same project.
+SELECT * FROM employee;
+SELECT * FROM employeedetail;
+
+WITH CTE AS
+    (SELECT e.`EmpID`,e.`EmpName`,ed.`Project`
+    FROM employee e INNER JOIN employeedetail ed ON e.`EmpID`=ed.`EmpID`)
+SELECT c1.`EmpName`,c2.`EmpName`,c1.`Project`
+FROM CTE c1,CTE c2
+WHERE c1.`Project`=c2.`Project` 
+  AND c1.`EmpID`!=c2.`EmpID` 
+  AND c1.`EmpID`<c2.`EmpID`;
+
+-- Explanation - so here since we want the project details also and it is not present in employee table it is in empployeedetail table so we need to join these two tables. Now after joining the table we use this table for our query so what we do is we join this new table and check whether two entries have same project name and also we don't want to compare it with itself so c1.`EmpID`!=c2.`EmpID` and also we don't want permutations also so we add this condition
+-- c1.`EmpID`<c2.`EmpID` and so finally we will get the required result.
+
+WITH CTE AS
+    (SELECT e.`EmpID`,e.`EmpName`,ed.`Project`
+    FROM employee e INNER JOIN employeedetail ed ON e.`EmpID`=ed.`EmpID`)
+SELECT c1.`EmpName`,c2.`EmpName`,c1.`Project`
+FROM CTE c1 JOIN CTE c2 ON c1.`Project`=c2.`Project` AND c1.`EmpID`<c2.`EmpID`;
+-- SQLBook: Code
+-- Show the employee with the highest salary for each project.
+SELECT ed.`Project`,MAX(DISTINCT e.`Salary`) AS MaxSalInProj
+FROM employee e INNER JOIN employeedetail ed ON e.`EmpID`=ed.`EmpID`
+GROUP BY ed.`Project`;
+
+-- employee name with highest salary for each project.
+WITH CTE AS
+    (SELECT e.`EmpID`,e.`EmpName`,ed.`Project`,e.`Salary`,
+    MAX(e.`Salary`) OVER(PARTITION BY ed.`Project`) AS MaxSalInProj
+    FROM employee e INNER JOIN employeedetail ed ON e.`EmpID`=ed.`EmpID`)
+SELECT `EmpID`,`EmpName`,`Project`,`Salary`
+FROM CTE
+WHERE `Salary`=`MaxSalInProj`;
+
+
+-- Alternative, more dynamic solution: here you can fetch EmpName, 2nd/3rd highest value, etc.
+WITH CTE AS
+    (SELECT e.`EmpID`,e.`EmpName`,ed.`Project`,e.`Salary`,
+    DENSE_RANK() OVER(PARTITION BY ed.`Project` ORDER BY e.`Salary` DESC) AS rnk
+    FROM employee e INNER JOIN employeedetail ed ON e.`EmpID`=ed.`EmpID`)
+SELECT `EmpID`,`EmpName`,`Project`,`Salary`
+FROM CTE
+WHERE rnk=1;
+-- SQLBook: Code
+-- Query to find the total count of employees joined each year.
+SELECT * FROM employeedetail;
+SELECT YEAR(`DOJ`) AS JoiningYear,COUNT(*) AS EmployeeCnt
+FROM employeedetail
+GROUP BY JoiningYear
+ORDER BY JoiningYear;
+-- SQLBook: Code
+-- Create 3 groups based on salary col, salary less than 1L is low, between 1-2L is medium and above 2L is High.
+SELECT EmpName, Salary,
+       CASE
+       WHEN Salary > 200000 THEN 'High'
+       WHEN Salary >= 100000 AND Salary <= 200000 THEN 'Medium'
+       ELSE 'Low'
+       END AS SalaryStatus
+FROM Employee;
+-- SQLBook: Code
+SELECT
+    EmpID,
+    EmpName,
+    SUM(CASE WHEN City = 'Mathura' THEN Salary END) AS "Mathura",
+    SUM(CASE WHEN City = 'Pune' THEN Salary END) AS "Pune",
+    SUM(CASE WHEN City = 'Delhi' THEN Salary END) AS "Delhi"
+FROM Employee
+GROUP BY EmpID, EmpName;
+
+
+WITH CTE AS (
+  SELECT
+    EmpID,
+    EmpName,
+    SUM(CASE WHEN City = 'Mathura' THEN Salary END) AS "Mathura",
+    SUM(CASE WHEN City = 'Pune' THEN Salary END) AS "Pune",
+    SUM(CASE WHEN City = 'Delhi' THEN Salary END) AS "Delhi"
+  FROM Employee
+  GROUP BY EmpID, EmpName
+)
+SELECT
+  `EmpID`,
+  `EmpName`,
+  IF(Mathura IS NULL, NULL, Mt) AS Mathura
+FROM (
+  SELECT *,
+         SUM(Mathura) OVER() AS Mt
+  FROM CTE
+) AS Subquery
+ORDER BY `EmpID`;

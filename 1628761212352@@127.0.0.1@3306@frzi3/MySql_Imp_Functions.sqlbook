@@ -1,0 +1,36 @@
+-- SQLBook: Code
+-- String Functions:-
+-- LOCATE(substring, string, start)  [performs a case-insensitive search]
+-- CHAR_LENGTH(string)  [return the length of a string (in characters)]
+-- LENGTH(string)  [returns the length of a string (in bytes)]
+-- CONCAT(expression1, expression2, expression3,...)  [adds two or more expressions together]
+-- CONCAT_WS(separator, expression1, expression2, expression3,...)  [adds two or more expressions together with a separator]
+-- INSTR(string, substring)  [returns the position of the first occurrence of a string in another string]
+-- LEFT(string, number_of_chars)  [extracts a number of characters from a string (starting from left)]
+-- RIGHT(string, number_of_chars)  [extracts a number of characters from a string (starting from right)]
+-- LOWER(text)  [converts a string to lower-case]
+-- UPPER(text)  [converts a string to upper-case]
+-- SUBSTR(string, start, length)  [extracts a substring from a string (starting at any position)]
+-- SUBSTRING(string, start, length)  [extracts a substring from a string (starting at any position)]
+-- TRIM(string)  [removes leading and trailing spaces from a string]
+-- LTRIM(string)  [removes leading spaces from a string]
+-- RTRIM(string)  [removes trailing spaces from a string]
+-- SQLBook: Code
+-- Numeric Functions
+-- ABS(number)
+-- CEIL(number)  [returns the smallest integer value that is bigger than or equal to a number]
+-- FLOOR(number)  [returns the largest integer value that is smaller than or equal to a number]
+-- ROUND(number, decimals)  [rounds a number to a specified number of decimal places]
+-- TRUNCATE(number, decimals)  [truncates a number to the specified number of decimal places]
+-- SQLBook: Code
+-- DATE Functions
+-- DATEDIFF(date1, date2)  [returns the number of days between two date values]
+-- CURDATE()  [returns the current date (The date is returned as "YYYY-MM-DD" (string) or as YYYYMMDD (numeric))]
+-- YEAR(date)  [returns the year part for a given date (a number from 1000 to 9999)]
+-- MONTH(date)  [eturns the month part for a given date (a number from 1 to 12)]
+-- DAY(date)  [returns the day of the month for a given date (a number from 1 to 31)]
+-- SQLBook: Code
+SELECT ROUND(345.546,2) AS Num;
+SELECT TRUNCATE(345.5467676,4) AS Num;
+SELECT INSTR("W3Schools.com", "3") AS MatchPosition;
+SELECT LOCATE("3", "W3Schools.com") AS MatchPosition;

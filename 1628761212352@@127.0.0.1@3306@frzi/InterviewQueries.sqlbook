@@ -1,0 +1,162 @@
+-- SQLBook: Code
+SELECT DISTINCT num FROM 
+(
+    SELECT num, 
+    LAG(num,2) OVER(ORDER BY id) as prev2,
+    LAG(num,1) OVER(ORDER BY id) as prev1
+    FROM logs
+) tbl 
+WHERE num=prev1 AND num=prev2;
+-- SQL Query to find all numbers that appear atleast 3 times consecutively. 
+
+
+-- SQLBook: Code
+select * from logs, (select @counter:=1, @prev:=NULL) vars
+-- @counter and @prev are session variables. They are initialized to 1 and NULL respectively. All rows are combined with these variables to give you what you see above.
+-- SQLBook: Code
+SELECT
+Num,
+@counter := IF(@prev = Num, @counter + 1, 1) AS how_many_cnt_in_a_row,
+@prev := Num
+FROM logs, (SELECT @counter:=1, @prev:=NULL) vars
+-- SQLBook: Code
+SELECT  DISTINCT(Num) AS ConsecutiveNums
+FROM (
+    SELECT
+    Num,
+    @counter := IF(@prev = Num, @counter + 1, 1) AS how_many_cnt_in_a_row,
+    @prev := Num
+    FROM logs, (SELECT @counter:=1, @prev:=NULL) vars
+) tbl 
+WHERE how_many_cnt_in_a_row >= 3
+-- SQLBook: Code
+SELECT * FROM employee;
+
+
+WITH CTE AS
+(
+  SELECT e1.id AS EmpID,e1.salary AS EmpSal,e2.id AS ManagerID,e2.salary AS ManagerSal
+  FROM employee e1 JOIN employee e2 ON e1.`managerId`=e2.id
+)
+SELECT * FROM CTE
+WHERE EmpSal > ManagerSal;
+
+
+SELECT name,salary FROM employee e1 
+WHERE salary > ( SELECT salary FROM employee e2 WHERE e1.`managerId`=e2.id );
+-- SQL Query to find the employees who earn more than their managers. 
+-- SQLBook: Code
+SELECT DISTINCT email FROM dupemail GROUP BY email HAVING COUNT(*)>1;
+-- SQLBook: Code
+SELECT e.name,e.salary,d.name 
+FROM emp1 e join department d ON e.`departmentID`=d.id
+-- SQLBook: Code
+SELECT d.name, MAX(salary)
+FROM emp1 e join department d ON e.`departmentID`=d.id
+GROUP BY d.name;
+-- Department Highest Salary 
+-- SQLBook: Code
+SELECT * FROM emp1;
+SELECT * FROM department;
+
+WITH CTE AS
+(
+    SELECT e.name AS EmpName,e.salary,d.id,d.name AS DeptName
+    FROM emp1 e JOIN department d ON e.`departmentID`=d.id
+)
+SELECT c1.EmpName,c1.salary,c1.DeptName
+FROM CTE c1
+WHERE c1.salary = (
+    SELECT MAX(c2.salary) FROM CTE c2
+    WHERE c1.DeptName=c2.DeptName
+);
+
+
+SELECT d.name AS department, e.name AS employee, e.salary
+FROM emp1 e
+INNER JOIN department d ON e.departmentID = d.id
+WHERE e.salary = (
+    SELECT MAX(salary)
+    FROM emp1
+    WHERE departmentID = e.departmentID
+)
+ORDER BY d.name;
+
+-- SQL Query to find the employees who have the highest salary in each department.
+
+-- SQLBook: Code
+SELECT d.name AS department, e.name AS employee, e.salary,
+DENSE_RANK() OVER (PARTITION BY d.name ORDER BY e.salary DESC) AS rnk
+FROM emp1 e
+INNER JOIN department d ON e.departmentID = d.id;
+-- SQLBook: Code
+SELECT department, employee, salary
+FROM (
+    SELECT d.name AS department, e.name AS employee, e.salary,
+           DENSE_RANK() OVER (PARTITION BY d.name ORDER BY e.salary DESC) AS rnk
+    FROM emp1 e
+    INNER JOIN department d ON e.departmentID = d.id
+) AS subquery
+WHERE rnk <= 3;
+-- SQL Query to get TOP three employees who earn highest in each department.
+-- SQLBook: Code
+DELETE e1
+FROM dupemail e1, dupemail e2
+WHERE e1.EMAIL=e2.EMAIL AND e1.ID>e2.ID;
+-- # Delete like Select evaluates for every record.
+-- # When we say Delete P1 we are deleting each record satifying our where condition not the entire table if you got confused with the nomeclature.
+-- # A property of a duplicate record is having same value but different id's/
+-- # We take two copies of the table and conpare each record in one table with the other and check if they have same email but different ids.
+-- # We then delete if the repeated records with greater ID values.
+-- SQLBook: Code
+/* There are 10 IPL team. write an sql query such that each team play with every other team just once. */
+
+drop table teams;
+create table teams
+    (
+        team_code       varchar(10),
+        team_name       varchar(40)
+    );
+
+insert into teams values ('RCB', 'Royal Challengers Bangalore'),('MI', 'Mumbai Indians'),('CSK', 'Chennai Super Kings'),('DC', 'Delhi Capitals'),('RR', 'Rajasthan Royals'),('SRH', 'Sunrisers Hyderbad'),('PBKS', 'Punjab Kings'),('KKR', 'Kolkata Knight Riders'),('GT', 'Gujarat Titans'),('LSG', 'Lucknow Super Giants');
+commit;
+
+-- SQLBook: Code
+SELECT * FROM teams;
+WITH matches AS 
+( SELECT ROW_NUMBER() OVER(ORDER BY team_name) AS ID,team_code,team_name 
+FROM teams t )
+SELECT team.team_name as team, opponent.team_name as opponent
+FROM matches team
+JOIN matches opponent ON team.id < opponent.id
+ORDER BY team.id;
+-- SQLBook: Code
+-- write an sql query such that each team play with every other team twice.
+WITH matches AS 
+( SELECT ROW_NUMBER() OVER(ORDER BY team_name) AS ID,team_code,team_name 
+FROM teams t )
+
+SELECT team.team_name as team, opponent.team_name as opponent
+FROM matches team JOIN matches opponent ON team.id <> opponent.id
+ORDER BY team.id;
+-- SQLBook: Code
+DROP TABLE brands;
+create table brands
+    (
+        Year VARCHAR(20),
+        Brand VARCHAR(20),
+        Amount INT(11)
+    );
+-- SQLBook: Code
+-- Write a query to fetch the record of brand whose amount is increasing every year.
+SELECT * FROM brands;
+
+with cte as
+    (SELECT *,
+      (CASE WHEN amount < LEAD(amount, 1, amount+1) OVER(PARTITION BY brand ORDER BY year) THEN 1
+            ELSE 0
+       END) as flag 
+    FROM brands)
+SELECT * 
+FROM brands
+WHERE brand NOT IN (SELECT brand FROM cte WHERE flag = 0)

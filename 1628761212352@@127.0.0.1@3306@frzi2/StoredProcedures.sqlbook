@@ -1,0 +1,82 @@
+-- SQLBook: Code
+SELECT * FROM products;
+SELECT * FROM sales;
+
+-- For every iPhone 13 Pro Max sale, modify the database tables accordingly.
+
+-- Creating PROCEDURE for this query.
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS pr_buy_products;
+
+CREATE PROCEDURE pr_buy_products()
+BEGIN
+    DECLARE var_product_code VARCHAR(10);
+    DECLARE var_price INT(11);
+
+    SELECT product_code, price
+    INTO var_product_code, var_price
+    FROM products
+    WHERE product_name = 'iPhone 13 Pro Max';
+
+    INSERT INTO sales (order_date,product_code,quantity_ordered,sale_price) VALUES (CURRENT_DATE,var_product_code,1,(var_price * 1));
+
+    UPDATE products
+    SET quantity_remaining = (quantity_remaining - 1),
+        quantity_sold = (quantity_sold + 1)
+    WHERE product_code = var_product_code;
+
+    SELECT 'Product Sold!';
+END $$
+
+DELIMITER ;
+
+SELECT * FROM products;
+SELECT * FROM sales;
+
+CALL pr_buy_products();
+-- SQLBook: Code
+SELECT * FROM sales;
+SELECT * FROM products;
+-- Example of stored procedures with parameters
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS pr_buy_products;
+
+CREATE PROCEDURE pr_buy_products(par_product_name VARCHAR(10), par_quantity INT)
+BEGIN
+    DECLARE var_product_code VARCHAR(10);
+    DECLARE var_price INT(11);
+    DECLARE var_cnt INT;
+
+    SELECT COUNT(1)
+    INTO var_cnt
+    FROM products
+    WHERE product_name = par_product_name
+    AND quantity_remaining >= par_quantity;
+
+    IF var_cnt > 0 THEN
+            SELECT product_code, price
+            INTO var_product_code, var_price
+            FROM products
+            WHERE product_name = par_product_name;
+
+            INSERT INTO sales (order_date,product_code,quantity_ordered,sale_price) VALUES (CURRENT_DATE,var_product_code,par_quantity,(var_price * par_quantity));
+
+            UPDATE products
+            SET quantity_remaining = (quantity_remaining - par_quantity),
+                quantity_sold = (quantity_sold + par_quantity)
+            WHERE product_code = var_product_code;
+
+            SELECT 'Product Sold!';
+    ELSE
+            SELECT 'Insufficient Quantity!';
+    END IF;
+END $$
+
+DELIMITER ;
+-- SQLBook: Code
+SELECT * FROM sales;
+SELECT * FROM products;
+CALL pr_buy_products('iPad Air',1);
