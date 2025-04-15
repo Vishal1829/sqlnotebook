@@ -1,6 +1,14 @@
 -- SQLBook: Code
 SELECT * FROM Employee;
 SELECT * FROM EmployeeDetail;
+
+-- left join = inner join + fetch any additional records from left table which is not present in right table.
+-- right join = inner join + fetch any additional records from right table which is not present in left table.
+-- full join = inner join 
+--             + fetch any additional records from left table which is not present in right table.
+--             + fetch any additional records from right table which is not present in left table.
+-- cross join = cartesian product
+-- natural join = if same column name exists then inner join else it will do cross join.
 -- SQLBook: Code
 -- Write a query to retrieve the list of employees from the same city.
 SELECT e1.`EmpID`,e1.`EmpName`,e1.`City`
